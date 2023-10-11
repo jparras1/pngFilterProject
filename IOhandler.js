@@ -46,7 +46,21 @@ const unzip = (pathIn, pathOut) => {
  */
 const readDir = (dir) => {
   return new Promise( (resolve, reject) => {
-
+    pngPaths = [];
+    fs.readdir(dir, (err, files) => {
+      if (err) {
+        if (err.code === "ENOENT") {
+          reject("Directory does not exist")
+        }
+      } else {
+        for (const file of files){
+          if (path.extname === ".png") {
+            pngPaths.push(file);
+          }
+        }
+        resolve(pngPaths);
+      }
+    })
   });
 };
 
