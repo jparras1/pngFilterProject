@@ -23,16 +23,17 @@ const { pipeline, Transform } = require("stream");
  */
 const unzip = (pathIn, pathOut) => {
   return new Promise( (resolve, reject) => {
-    pipeline (
+    pipeline(
       fs.createReadStream(pathIn),
       unzipper.Extract({path: pathOut}),
 
       function onEnd(err) {
         if (err) {
           reject(`Error: ${err}`);
+        } else {
+          resolve("Extraction complete.");
         }
       },
-      resolve()
     );
   });
 };
@@ -43,7 +44,11 @@ const unzip = (pathIn, pathOut) => {
  * @param {string} path
  * @return {promise}
  */
-const readDir = (dir) => {};
+const readDir = (dir) => {
+  return new Promise( (resolve, reject) => {
+
+  });
+};
 
 /**
  * Description: Read in png file by given pathIn,
