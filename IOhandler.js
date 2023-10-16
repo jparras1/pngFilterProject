@@ -13,6 +13,7 @@ const unzipper = require("unzipper"),
   PNG = require("pngjs").PNG,
   path = require("path");
 const { pipeline, Transform } = require("stream");
+const AdmZip = require("adm-zip");
 
 /**
  * Description: decompress file from given pathIn, write to given pathOut
@@ -23,18 +24,9 @@ const { pipeline, Transform } = require("stream");
  */
 const unzip = (pathIn, pathOut) => {
   return new Promise( (resolve, reject) => {
-    pipeline(
-      fs.createReadStream(pathIn),
-      unzipper.Extract({path: pathOut}),
-
-      function onEnd(err) {
-        if (err) {
-          reject(`Error: ${err}`);
-        } else {
-          resolve("Extraction complete.");
-        }
-      },
-    );
+    const zip = new AdmZip(pathIn);
+    zip.extractAllTo(pathOut, true);
+    console.log("Extraction operation completed");
   });
 };
 
@@ -46,23 +38,21 @@ const unzip = (pathIn, pathOut) => {
  */
 const readDir = (dir) => {
   return new Promise( (resolve, reject) => {
-    pngPaths = [];
+    pngArray = [];
     fs.readdir(dir, (err, files) => {
       if (err) {
-        if (err.code === "ENOENT") {
-          reject("Directory does not exist")
-        }
+        reject(err);
       } else {
-        for (const file of files){
-          if (path.extname === ".png") {
-            pngPaths.push(file);
+          for (const file of files){
+            if (path.extname(file) === ".png") {
+              pngArray.push(path.join(dir, file));
+            }
           }
+          resolve(pngArray);
         }
-        resolve(pngPaths);
-      }
-    })
+    });
   });
-};
+}      
 
 /**
  * Description: Read in png file by given pathIn,
@@ -72,7 +62,31 @@ const readDir = (dir) => {
  * @param {string} pathProcessed
  * @return {promise}
  */
-const grayScale = (pathIn, pathOut) => {};
+const grayScale = (pathIn, pathOut) => {
+  return new Promise( (resolve, reject) => {
+    fs.createReadStream(pathIn)
+      .pipe(new PNG({ filterType: 4, }))
+      .on("parsed", function () {
+        for (var y = 0; y < this.height; y++) {
+          for (var x = 0; x < this.width; x++) {
+            var idx = (this.width * y + x) << 2;
+
+            // invert color
+            this.data[idx] = 255 - this.data[idx];
+            this.data[idx + 1] = 255 - this.data[idx + 1];
+            this.data[idx + 2] = 255 - this.data[idx + 2];
+
+            // and reduce opacity
+            this.data[idx + 3] = this.data[idx + 3] >> 1;
+          }
+        }
+
+        this.pack().pipe(fs.createWriteStream(path.join(pathOut, "processed.png")));
+      })
+      .on("err", (err) => {reject(`Error: ${err}`)})
+      .on('end', () => {resolve("Done!")})
+  });
+};
 
 module.exports = {
   unzip,
