@@ -1,4 +1,5 @@
 const path = require("path");
+const fs = require("fs")
 
 /*
  * Project: Milestone 1
@@ -14,14 +15,12 @@ const IOhandler = require("./IOhandler");
 const zipFilePath = path.join(__dirname, "myfile.zip");
 const pathUnzipped = path.join(__dirname, "unzipped");
 const pathProcessed = path.join(__dirname, "grayscaled");
-const sample = path.join(__dirname, "unzipped", "in1.png");
 
-// IOhandler.unzip(zipFilePath, pathUnzipped)
-// IOhandler.readDir(pathUnzipped)
-//     .then((pngPaths) => {
-//         for (const img of pngPaths) {
-//             IOhandler.grayScale(img)}          
-//         })
-IOhandler.grayScale(sample, pathProcessed)
+IOhandler.unzip(zipFilePath, pathUnzipped)
+    .then(() => IOhandler.readDir(pathUnzipped))
+    .then((pngPaths) => {
+        for(let img of pngPaths) {
+            IOhandler.grayScale(img, pathProcessed);
+        }
+    })
     .catch( (err) => { console.log(err) })
-// console.log(sample)

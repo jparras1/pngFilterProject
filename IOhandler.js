@@ -12,7 +12,6 @@ const unzipper = require("unzipper"),
   fs = require("fs"),
   PNG = require("pngjs").PNG,
   path = require("path");
-const { pipeline, Transform } = require("stream");
 const AdmZip = require("adm-zip");
 
 /**
@@ -25,8 +24,13 @@ const AdmZip = require("adm-zip");
 const unzip = (pathIn, pathOut) => {
   return new Promise( (resolve, reject) => {
     const zip = new AdmZip(pathIn);
-    zip.extractAllTo(pathOut, true);
-    console.log("Extraction operation completed");
+    zip.extractAllToAsync(pathOut, true, (err) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve();
+      }
+    });
   });
 };
 
@@ -38,18 +42,18 @@ const unzip = (pathIn, pathOut) => {
  */
 const readDir = (dir) => {
   return new Promise( (resolve, reject) => {
-    pngArray = [];
+    const pngArray = [];
     fs.readdir(dir, (err, files) => {
       if (err) {
         reject(err);
       } else {
-          for (const file of files){
-            if (path.extname(file) === ".png") {
-              pngArray.push(path.join(dir, file));
-            }
+        for (const file of files){
+          if (path.extname(file) === ".png") {
+            pngArray.push(path.join(dir, file));
           }
-          resolve(pngArray);
         }
+        resolve(pngArray);
+      }
     });
   });
 }      
@@ -82,11 +86,10 @@ const grayScale = (pathIn, pathOut) => {
             this.data[idx + 3] = this.data[idx + 3] >> 1;
           }
         }
-
-        this.pack().pipe(fs.createWriteStream(path.join(pathOut, "processed1.png")));
-      })
-      .on("err", (err) => {reject(`Error: ${err}`)})
-      .on('end', () => {resolve("Done!")})
+        procImage = `${path.basename(pathIn, '.png')}_processed.png`;
+        this.pack().pipe(fs.createWriteStream(path.join(pathOut, procImage)));
+        resolve()
+      });
   });
 };
 
