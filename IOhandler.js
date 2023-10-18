@@ -13,6 +13,7 @@ const unzipper = require("unzipper"),
   PNG = require("pngjs").PNG,
   path = require("path");
 const AdmZip = require("adm-zip");
+const {pipeline} = require("stream");
 
 /**
  * Description: decompress file from given pathIn, write to given pathOut
@@ -28,7 +29,8 @@ const unzip = (pathIn, pathOut) => {
       if (err) {
         reject(err);
       } else {
-        resolve();
+        // output a message when the extraction is successful
+        resolve("Extraction operation completed");
       }
     });
   });
@@ -42,12 +44,18 @@ const unzip = (pathIn, pathOut) => {
  */
 const readDir = (dir) => {
   return new Promise( (resolve, reject) => {
+    // create an array to store the png paths
     const pngArray = [];
     fs.readdir(dir, (err, files) => {
       if (err) {
+        if (err.code === "ENOENT") {
+          reject("Directory not found.");
+        }
         reject(err);
-      } else {
+      }
+      else {
         for (const file of files){
+          // check if the file is a '.png'
           if (path.extname(file) === ".png") {
             pngArray.push(path.join(dir, file));
           }
@@ -88,8 +96,8 @@ const grayScale = (pathIn, pathOut) => {
         }
         procImage = `${path.basename(pathIn, '.png')}_processed.png`;
         this.pack().pipe(fs.createWriteStream(path.join(pathOut, procImage)));
-        resolve()
-      });
+        resolve();
+      })
   });
 };
 
